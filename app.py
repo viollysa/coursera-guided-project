@@ -8,10 +8,12 @@ DATA_URL = (
 "/home/rhyme/Desktop/Project/Motor_Vehicle_Collisions_-_Crashes.csv"
 )
 
+# Creating the title for the web app using streamlit
 st.title("Motor Vehicle Collisions in New York City")
 st.markdown("This application is a  Streamlit dashboard that can be used "
 "to analyze motor vechile collisions in NYC")
 
+# Using a "st.cache" function to not slow down the run time too much
 @st.cache(persist=True)
 def load_data(nrows):
     data = pd.read_csv(DATA_URL, nrows=nrows, parse_dates=[['CRASH_DATE', 'CRASH_TIME']])
@@ -22,8 +24,9 @@ def load_data(nrows):
     return data
 
 data = load_data(100000)
-original_data = data
+original_data = data    # Used later for the selectbox
 
+# Creating a slider to pick generated points on a map
 st.header("Where are the most people injured in NYC?")
 injured_people = st.slider("Number of persons injured in vechile collisions", 0, 19)
 st.map(data.query("injured_persons >= @injured_people")[["latitude","longitude"]].dropna(how="any"))
@@ -35,6 +38,7 @@ data = data[data['date/time'].dt.hour == hour]
 st.markdown("Vehicle collisions betwen %i:00 and %i:00" % (hour, (hour + 1) % 24))
 midpoint = (np.average(data['latitude']), np.average(data['longitude']))
 
+# Picking where the map should focus (NYC)
 st.write(pdk.Deck(
     map_style="mapbox://styles/mapbox/light-v9",
     initial_view_state={
@@ -49,7 +53,7 @@ st.write(pdk.Deck(
         data=data[['date/time', 'latitude', 'longitude']],
         get_position = ['longitude', 'latitude'],
         radius = 100,
-        extruded = True,
+        extruded = True,    # Creates a "3D" effect to the points
         pickable = True,
         elevation_scale = 4,
         elevation_range = [0, 1000],
@@ -57,6 +61,7 @@ st.write(pdk.Deck(
     ],
 ))
 
+# Histogram 
 st.subheader("Breakdown by minute between %i:00 and %i:00" % (hour, (hour + 1) %24))
 filtered = data[
     (data['date/time'].dt.hour >= hour) & (data['date/time'].dt.hour < (hour + 1))
@@ -66,6 +71,7 @@ chart_data = pd.DataFrame({'minute':range(60), 'crashes':hist})
 fig = px.bar(chart_data, x ='minute', y='crashes', hover_data= ['minute', 'crashes'], height=400)
 st.write(fig)
 
+# SelectBox to pick certain types of affected peoples
 st.header("Top 5 dangerous streets by affected type")
 select = st.selectbox('Affected type of people', ['Pedestrians', 'Cyclists', 'Mototrists'])
 
